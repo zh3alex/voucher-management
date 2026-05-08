@@ -60,6 +60,25 @@ export const useVoucherStore = defineStore('vouchers', () => {
     }
   }
 
+async function remove(id: number) {
+  isLoading.value = true
+
+  try {
+    await api.delete(`/vouchers/${id}`)
+
+    const index = vouchers.value.findIndex(v => v.id === id)
+
+    if (index !== -1) {
+      vouchers.value.splice(index, 1)
+    }
+
+    return true
+  } finally {
+    isLoading.value = false
+  }
+}
+  
+
 async function openPdf(id: number) {
   isLoading.value = true
   try {
@@ -92,6 +111,7 @@ async function openPdf(id: number) {
     fetchAll,
     create,
     update,
+    remove,
     openPdf
   }
 })

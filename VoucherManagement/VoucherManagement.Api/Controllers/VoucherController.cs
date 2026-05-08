@@ -93,6 +93,33 @@ namespace VoucherManagement.Api.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{id:int}")]
+        [Authorize(Policy = "ManageVouchers")]
+        public async Task<IActionResult> DeleteVoucher(int id)
+        {
+            await using var context = await _appDbContext.CreateDbContextAsync();
+
+            var dbEntry = await context.Vouchers
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (dbEntry == null)
+                return NotFound();
+
+            // Delete
+            if (dbEntry.Status == Enums.VoucherStatus.Printed || dbEntry.Status == Enums.VoucherStatus.Created)
+            {
+                context.Remove(dbEntry);
+                await context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            // Bad Status
+            else
+            {
+                return BadRequest();
+            }
+        }
+
         [HttpGet("{id}/pdf")]
         [Authorize(Policy = "ManageVouchers")]
         public async Task<ActionResult> GetVoucherPdf(int id)

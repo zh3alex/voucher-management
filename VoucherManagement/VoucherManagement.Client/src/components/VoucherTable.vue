@@ -90,6 +90,12 @@ const createVoucher = async () => {
   await voucherStore.fetchAll()
 }
 
+const removeVoucher = async () => {
+  await voucherStore.remove(selectedVoucher.value.id)
+  await voucherStore.fetchAll()
+  closeDialog()
+}
+
 </script>
 
 <template>
@@ -191,6 +197,9 @@ const createVoucher = async () => {
         <DialogFooter>
           <Button type="button" variant="outline" @click="closeDialog">
             Abbrechen
+          </Button>
+          <Button v-if="editedVoucher.status == 'Created' || editedVoucher.status == 'Printed'" type="button" variant="outline" @click="removeVoucher">
+            Entfernen
           </Button>
           <Button type="submit" @click="saveVoucher">
             Speichern
