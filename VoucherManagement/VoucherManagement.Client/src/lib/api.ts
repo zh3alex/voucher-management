@@ -3,9 +3,7 @@ import axios from 'axios'
 import { getAuth0Client } from '../auth0Client'
 
 const api = axios.create({
-  baseURL: import.meta.env.DEV
-    ? 'http://localhost:5245/api'
-    : '/api',
+  baseURL: import.meta.env.VITE_API_URL,
 })
 
 // Token automatisch anhängen

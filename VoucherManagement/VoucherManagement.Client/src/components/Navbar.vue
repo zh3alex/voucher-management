@@ -38,7 +38,8 @@ import { useAuth0 } from '@auth0/auth0-vue'
 //const auth = useAuthStore()
 //const route = useRoute()
 //const router = useRouter()
-const logoUrl = '/api/branding/logo.png';
+const logoUrl = `${import.meta.env.VITE_API_URL}/branding/logo.png`
+
 const { loginWithRedirect, logout, isAuthenticated, } = useAuth0()
 
 function handleLogout() {

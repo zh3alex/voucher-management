@@ -49,7 +49,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowVue",
         policy => policy
-            .WithOrigins("http://localhost:5173") // Port von Vite
+            .WithOrigins("http://localhost:8082") // Port von Vite
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
