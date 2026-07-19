@@ -1,18 +1,18 @@
-// src/api.ts
+// src/lib/api.ts
 import axios from 'axios'
-import { getAuth0Client } from '../auth0Client'
+import { useAuthStore } from '@/stores/authStore'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 })
 
-// Token automatisch anhängen
-api.interceptors.request.use(async (config) => {
-  const auth0 = getAuth0Client()
+api.interceptors.request.use((config) => {
 
-  if (auth0) {
-    const token = await auth0.getAccessTokenSilently()
-    config.headers.Authorization = `Bearer ${token}`
+  const auth = useAuthStore()
+
+  if (auth.token) {
+    config.headers.Authorization =
+      `Bearer ${auth.token}`
   }
 
   return config

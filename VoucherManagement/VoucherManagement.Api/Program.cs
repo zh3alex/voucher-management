@@ -21,11 +21,42 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}/";
-        options.Audience = builder.Configuration["Auth0:Audience"];
+        options.Authority = builder.Configuration["Authentik:Authority"];
+        options.Audience = builder.Configuration["Authentik:Audience"];
+        // Make sure metadata is loaded via HTTPS in dev too
+        options.RequireHttpsMetadata = true;
+
         options.TokenValidationParameters = new()
         {
-            NameClaimType = "sub"
+            NameClaimType = "sub",
+            // Ensure audience is validated against configured value
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Authentik:Audience"]
+        };
+
+        // Helpful runtime logging to diagnose 401s during development
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                // short debug output when a token is present
+                if (!string.IsNullOrEmpty(ctx.Token))
+                {
+                    Console.WriteLine($"[Auth] Token received, length={ctx.Token.Length}");
+                }
+
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[Auth] Authentication failed: {ctx.Exception?.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = ctx =>
+            {
+                Console.WriteLine($"[Auth] Token validated for: {ctx.Principal?.Identity?.Name}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -33,11 +64,21 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManageVouchers", policy =>
         policy.RequireAssertion(context =>
-            context.User.HasClaim(c =>
-                (c.Type == "scope" && c.Value.Split(' ').Contains("manage:vouchers")) ||
-                (c.Type == "permissions" && c.Value == "manage:vouchers")
-            )
-        )
+        {
+            // Some identity providers use "scope", others "scp"
+            var scopeValue = context.User.FindFirst("scope")?.Value
+                             ?? context.User.FindFirst("scp")?.Value
+                             ?? string.Empty;
+
+            var scopes = scopeValue
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            var permissions = context.User.FindAll("permissions")
+                .Select(c => c.Value);
+
+            return scopes.Contains("manage:vouchers")
+                   || permissions.Contains("manage:vouchers");
+        })
     );
 });
 
@@ -82,6 +123,8 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 // Seed DB
 using (var scope = app.Services.CreateScope())

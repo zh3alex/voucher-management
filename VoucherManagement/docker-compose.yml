@@ -36,6 +36,10 @@ services:
         VITE_AUTH0_CLIENT_ID: ${Auth0__ClientId}
         VITE_AUTH0_AUDIENCE: ${Auth0__Audience}
         VITE_AUTH0_SCOPE: ${Auth0__Scope}
+        VITE_AUTHENTIK_AUTHORITY: ${Authentik__Authority}
+        VITE_AUTHENTIK_AUDIENCE: ${Authentik__Audience}
+        VITE_AUTHENTIK_CLIENT_ID: ${Authentik__ClientId}
+        VITE_AUTHENTIK_SCOPE: ${Authentik__Scope}
         VITE_API_URL: ${API_URL}
     depends_on:
       - voucher-management-api

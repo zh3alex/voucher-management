@@ -1,60 +1,74 @@
 import { defineStore } from 'pinia'
-import api from '@/lib/api'
+import { oidcClient } from '@/lib/oidcClient'
 
-interface JwtPayload {
-  role?: string
+interface UserInfo {
   name?: string
-  [key: string]: unknown
-}
-
-function base64UrlDecode(str: string): string {
-  str = str.replace(/-/g, '+').replace(/_/g, '/')
-  while (str.length % 4) {
-    str += '='
-  }
-  return atob(str)
+  email?: string
+  permissions?: string[]
+  groups?: string[]
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: localStorage.getItem('token') as string | null,
-    role: localStorage.getItem('role') as string | null,
-    username: localStorage.getItem('username') as string | null,
+    user: null as UserInfo | null,
+    token: null as string | null,
   }),
 
+  getters: {
+    isAuthenticated: (state) => !!state.user,
+
+    canManageVouchers: (state) =>
+      state.user?.permissions?.includes('manage:vouchers') ?? false,
+  },
+
   actions: {
-    async login(username: string, password: string) {
-      const res = await api.post('/users/login', { username, password })
-      this.token = res.data.token
 
-      if (this.token) {
-        const base64Payload = this.token.split('.')[1]
-        const jsonPayload = base64UrlDecode(base64Payload ?? '')
-        const payload = JSON.parse(jsonPayload) as JwtPayload
+    async login() {
+      console.log(import.meta.env.VITE_AUTHENTIK_AUTHORITY)
+      await oidcClient.signinRedirect()
+    },
 
-        console.log(payload)
+    async handleCallback() {
+      const user = await oidcClient.signinRedirectCallback()
 
-        this.role = payload.role || ''
-        this.username = payload.name || 'Unbekannt'
-      } else {
-        this.role = ''
-        this.username = ''
+      this.token = user.access_token
+
+      this.user = {
+        name: user.profile.name as string,
+        email: user.profile.email as string,
+        permissions: user.profile.permissions as string[] ?? [],
+        groups: user.profile.groups as string[] ?? []
       }
 
-      // Token und Userdaten speichern
-      if (this.token) localStorage.setItem('token', this.token)
-      if (this.role) localStorage.setItem('role', this.role)
-      if (this.username) localStorage.setItem('username', this.username)
+      localStorage.setItem('token', this.token)
     },
 
-    logout() {
+
+    async logout() {
+      this.user = null
       this.token = null
-      this.role = null
-      this.username = null
 
       localStorage.removeItem('token')
-      localStorage.removeItem('role')
-      localStorage.removeItem('username')
+
+      await oidcClient.signoutRedirect()
     },
-  },
+
+
+    async loadUser() {
+      const user = await oidcClient.getUser()
+
+      if (!user) {
+        return
+      }
+
+      this.token = user.access_token
+
+      this.user = {
+        name: user.profile.name as string,
+        email: user.profile.email as string,
+        permissions: user.profile.permissions as string[] ?? [],
+        groups: user.profile.groups as string[] ?? []
+      }
+    }
+  }
 })

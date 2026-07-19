@@ -1,38 +1,44 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { useAuth0 } from '@auth0/auth0-vue'
-import { authGuard } from '@auth0/auth0-vue'
-import HomeView from '@/views/HomeView.vue'
+import { useAuthStore } from '@/stores/authStore'
 
+import HomeView from '@/views/HomeView.vue'
+import AuthCallback from '@/views/AuthCallbackView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: HomeView,
-    beforeEnter: authGuard,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/callback',
+    component: AuthCallback
   }
 ]
-const router = createRouter({  
+
+const router = createRouter({
   history: createWebHistory(),
   routes,
 })
 
-router.beforeEach(async (to) => {
-  const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0()
 
-  // ⏳ Auth0 lädt → Navigation erlauben
-  if (isLoading.value) {
-    return true
+router.beforeEach(async (to) => {
+
+  const auth = useAuthStore()
+
+  // User beim Start laden
+  if (!auth.user) {
+    await auth.loadUser()
   }
 
-  // 🔐 Geschützte Route
-  if (to.meta.requiresAuth && !isAuthenticated.value) {
-    await loginWithRedirect({
-      appState: { target: to.fullPath }
-    })
+  // Geschützte Route
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    await auth.login()
     return false
   }
 
   return true
 })
+
+
 export default router
