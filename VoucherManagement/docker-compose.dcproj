@@ -11,5 +11,6 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="VoucherManagement.Client\src\types\pagedResult.ts" />
   </ItemGroup>
 </Project>

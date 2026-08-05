@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useVoucherStore } from '@/stores/voucherStore';
 import { onMounted, ref } from 'vue';
+import PaginationShadcn from '@/components/ui/PaginationShadcn.vue'
 import { formatDateCET } from '@/lib/date';
 import type { VoucherStatus } from "@/enums/voucherStatus"
 import { SquarePlusIcon, SearchIcon } from 'lucide-vue-next'
@@ -37,7 +38,7 @@ const editedVoucher = ref({
 })
 
 onMounted(async() => {
-  await voucherStore.fetchAll()
+  await voucherStore.fetchPage(1, voucherStore.pageSize)
 })
 
 const searchVoucher = () => {
@@ -74,26 +75,32 @@ const saveVoucher = async () => {
     // await voucherStore.updateVoucher(selectedVoucher.value.id, editedVoucher.value)
     await voucherStore.update(selectedVoucher.value.id, editedVoucher.value) // Aktualisiere die Liste nach dem Speichern
     console.log('Speichere Gutschein:', selectedVoucher.value.id, editedVoucher.value)
-    await voucherStore.fetchAll()
+    await voucherStore.fetchPage(voucherStore.pageNumber, voucherStore.pageSize)
     closeDialog()
   }
 }
 
 const openPdf = async (voucherId: number) => {
   await voucherStore.openPdf(voucherId)
-  await voucherStore.fetchAll()
+  await voucherStore.fetchPage(voucherStore.pageNumber, voucherStore.pageSize)
   closeDialog()
 }
 
 const createVoucher = async () => {
   await voucherStore.create()
-  await voucherStore.fetchAll()
+  // reload current page, or first page if count changed
+  await voucherStore.fetchPage(voucherStore.pageNumber, voucherStore.pageSize)
 }
 
 const removeVoucher = async () => {
   await voucherStore.remove(selectedVoucher.value.id)
-  await voucherStore.fetchAll()
+  await voucherStore.fetchPage(voucherStore.pageNumber, voucherStore.pageSize)
   closeDialog()
+}
+
+const goToPage = async (p: number) => {
+  if (p === voucherStore.pageNumber) return
+  await voucherStore.fetchPage(p, voucherStore.pageSize)
 }
 
 </script>
@@ -107,7 +114,6 @@ const removeVoucher = async () => {
      </div>
     <div class="pt-4">
       <Table class="pt-4">
-        <TableCaption>Alle Gutscheine</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead class="w-[100px]">ID</TableHead>
@@ -137,6 +143,8 @@ const removeVoucher = async () => {
         </TableBody>
       </Table>
     </div>
+
+    <PaginationShadcn :page="voucherStore.pageNumber" :totalPages="voucherStore.totalPages" @change="goToPage" />
 
     <Dialog v-model:open="isDialogOpen">
       <DialogContent class="sm:max-w-[600px]">

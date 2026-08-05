@@ -20,7 +20,23 @@ namespace VoucherManagement.Api.Services
         public async Task<List<Voucher>> GetVouchers()
         {
             using var context = await _appDbContext.CreateDbContextAsync();
-            return await context.Vouchers.OrderByDescending(x => x.CreatedAt).ToListAsync();    
+            return await context.Vouchers.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        }
+
+        public async Task<VoucherManagement.Api.Dtos.PagedResult<Voucher>> GetVouchersPaged(int pageNumber, int pageSize)
+        {
+            using var context = await _appDbContext.CreateDbContextAsync();
+
+            var query = context.Vouchers.OrderByDescending(x => x.CreatedAt).AsQueryable();
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new VoucherManagement.Api.Dtos.PagedResult<Voucher>(items, totalCount, pageNumber, pageSize);
         }
 
         public async Task<Voucher> CreateVoucher()

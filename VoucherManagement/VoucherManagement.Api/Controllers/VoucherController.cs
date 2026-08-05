@@ -34,9 +34,14 @@ namespace VoucherManagement.Api.Controllers
 
         [HttpGet]
         [Authorize(Policy = "ManageVouchers")]
-        public async Task<ActionResult> GetVouchers()
+        public async Task<ActionResult> GetVouchers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
         {
-            var data = await _voucherService.GetVouchers();
+            // sanitize inputs
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 1;
+            if (pageSize > 100) pageSize = 100;
+
+            var data = await _voucherService.GetVouchersPaged(pageNumber, pageSize);
 
             return Ok(data);
         }
