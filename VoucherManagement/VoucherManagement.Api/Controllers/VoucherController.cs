@@ -125,6 +125,21 @@ namespace VoucherManagement.Api.Controllers
             }
         }
 
+        [HttpGet("search")]
+        [Authorize(Policy = "ManageVouchers")]
+        public async Task<ActionResult<Voucher>> SearchVoucher([FromQuery] string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return BadRequest();
+
+            var voucher = await _voucherService.GetVoucherByCode(code);
+
+            if (voucher == null)
+                return NotFound();
+
+            return Ok(voucher);
+        }
+
         [HttpGet("{id}/pdf")]
         [Authorize(Policy = "ManageVouchers")]
         public async Task<ActionResult> GetVoucherPdf(int id)

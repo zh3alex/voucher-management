@@ -102,6 +102,22 @@ export const useVoucherStore = defineStore('vouchers', () => {
     }
   }
 
+  async function searchVoucher(code: string) {
+    const normalizedCode = code.trim()
+    if (!normalizedCode) return null
+
+    isLoading.value = true
+    try {
+      const res = await api.get<Voucher>(`/vouchers/search`, {
+        params: { code: normalizedCode }
+      })
+
+      return res.data
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   async function openPdf(id: number) {
     isLoading.value = true
     try {
@@ -140,6 +156,7 @@ export const useVoucherStore = defineStore('vouchers', () => {
     create,
     update,
     remove,
+    searchVoucher,
     openPdf
   }
 })

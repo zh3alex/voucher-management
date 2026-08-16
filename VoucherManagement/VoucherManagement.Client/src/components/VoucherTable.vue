@@ -40,10 +40,15 @@ onMounted(async() => {
   await voucherStore.fetchPage(1, voucherStore.pageSize)
 })
 
-const searchVoucher = () => {
-  const voucher = voucherStore.vouchers.find(
-    v => v.code.toLowerCase() === searchCode.value.trim().toLowerCase()
-  )
+const searchVoucher = async () => {
+  const trimmedCode = searchCode.value.trim()
+
+  if (!trimmedCode) {
+    alert('Bitte geben Sie einen Gutscheincode ein')
+    return
+  }
+
+  const voucher = await voucherStore.searchVoucher(trimmedCode)
 
   if (voucher) {
     openDialog(voucher)

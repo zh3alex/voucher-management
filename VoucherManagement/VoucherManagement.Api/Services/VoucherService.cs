@@ -98,5 +98,16 @@ namespace VoucherManagement.Api.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(v => v.Id == voucherId);
         }
+
+        public async Task<Voucher?> GetVoucherByCode(string code)
+        {
+            using var context = await _appDbContext.CreateDbContextAsync();
+
+            var normalizedCode = code.Trim();
+
+            return await context.Vouchers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.Code.ToLower() == normalizedCode.ToLower());
+        }
     }
 }
